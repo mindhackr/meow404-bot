@@ -1,24 +1,34 @@
+from __future__ import annotations
+
+import asyncio
 import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
 
-API_TOKEN = "ВАШ_ТОКЕН_ЗДЕСЬ"
+from aiogram import Bot, Dispatcher
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
-logging.basicConfig(level=logging.INFO)
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+from app.config import get_settings
+from app.db import init_database
+from app.handlers import admin as admin_handlers
+from app.handlers import user as user_handlers
 
-@dp.message_handler(commands=["start"])
-async def send_welcome(message: types.Message):
-    await message.reply("🐾 Добро пожаловать в MEOW×404.
-Нажми СТАРТ — и фарм начнётся.")
 
-@dp.message_handler(commands=["help"])
-async def send_help(message: types.Message):
-    await message.reply("ℹ️ Команды:
-/start — вход
-/help — помощь
-/rank — твой хвостовый ранг (в разработке)")
+async def main() -> None:
+    settings = get_settings()
+    logging.basicConfig(level=logging.INFO)
+
+    bot = Bot(token=settings.bot_token, parse_mode=ParseMode.MARKDOWN)
+    dp = Dispatcher(storage=MemoryStorage())
+
+    dp.include_router(user_handlers.router)
+    dp.include_router(admin_handlers.router)
+
+    await init_database()
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Bot stopped")
