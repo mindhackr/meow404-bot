@@ -1,11 +1,9 @@
-import telebot
-import os
+from __future__ import annotations
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(BOT_TOKEN)
+import asyncio
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "😼 Привет! Ты запустил MEOW×404 БОТА. Пиши команду или жди NFT-дропа.")
+from bot import main as bot_main
 
-bot.polling()
+
+if __name__ == "__main__":
+    asyncio.run(bot_main())
